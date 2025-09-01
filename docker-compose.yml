@@ -1,0 +1,84 @@
+version: "3.9"
+services:
+  web:
+    build:
+      context: ./WebwithMCP-main
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    depends_on:
+      mysql:
+        condition: "service_healthy"
+      n8n_mcp:
+        condition: "service_healthy"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MCP_HOST: n8n_mcp:3456
+      HISTORY_DATABASE: chatdb
+    volumes:
+      - ./WebwithMCP-main/config:/usr/data/webConfig
+
+  n8n_mcp:
+    build:
+      context: ./mcp-n8n-workflow-builder
+      dockerfile: Dockerfile
+    ports:
+      - "3456:3456"
+    depends_on:
+      - n8n
+    volumes:
+      - ./mcp-n8n-workflow-builder/config:/usr/data/n8nMcpConfig
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3456/health"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    depends_on:
+      - mysql
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin
+      - DB_TYPE=mysql
+      - DB_MYSQLDB_HOST=mysql
+      - DB_MYSQLDB_PORT=3306
+      - DB_MYSQLDB_DATABASE=n8n
+      - DB_MYSQLDB_USER=root
+      - DB_MYSQLDB_PASSWORD=root
+    volumes:
+      - n8n_data:/root/.n8n
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/health"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  n8n_data:
+    driver: local
+  mysql_data:
+    driver: local

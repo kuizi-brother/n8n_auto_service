@@ -1,0 +1,10 @@
+# 通用
+.git
+.vscode
+.vercel
+*.log
+__pycache__/
+*.pyc
+
+# Python 虚拟环境
+.venv/

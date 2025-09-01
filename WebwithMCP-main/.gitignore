@@ -1,0 +1,8 @@
+/man.py
+/test.py
+backend/__pycache__/database.cpython-313.pyc
+backend/__pycache__/main.cpython-313.pyc
+backend/__pycache__/mcp_agent.cpython-313.pyc
+backend.zip
+frontend.zip
+backend/config/.env
